@@ -1,0 +1,11 @@
+.DS_Store
+.project
+.classpath
+.settings/
+target
+*.iml
+.idea
+.metals
+*/metals.sbt
+.bloop
+.vscode
