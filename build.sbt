@@ -1,14 +1,16 @@
 import Libs._
-
 ThisBuild / scalaVersion := "2.13.2"
 ThisBuild / version := "0.1.0-SNAPSHOT"
 ThisBuild / organization := "com.reaktive-carrot"
 ThisBuild / organizationName := "reaktive-carrot"
+// ThisBuild / semanticdbEnabled := true
+// ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 
 lazy val scalaCompilerOptions = Seq(
   "-encoding",
   "UTF-8",
   "-Ywarn-dead-code",
+  "-Ywarn-unused",
   "-Ywarn-unused-import",
   "-Ywarn-inaccessible",
   "-language:higherKinds",
@@ -19,6 +21,7 @@ lazy val commonDependencies = Seq(
   Libs.zio,
   Libs.zioTest    % Test,
   Libs.zioTestSbt % Test
+  // Libs.zioJunit   % Test
 )
 
 lazy val root = (project in file("."))
@@ -27,4 +30,6 @@ lazy val root = (project in file("."))
     libraryDependencies ++= commonDependencies
   )
 
-// See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.
+// CMD ALIASES
+// format all sources and tests with scala fmt
+addCommandAlias("format", ";scalafmt;test:scalafmt")
