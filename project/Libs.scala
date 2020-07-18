@@ -5,7 +5,9 @@ object Versions {
 }
 
 object Libs {
-  lazy val zio        = "dev.zio" %% "zio"          % Versions.zioVersion
-  lazy val zioTest    = "dev.zio" %% "zio-test"     % Versions.zioVersion
-  lazy val zioTestSbt = "dev.zio" %% "zio-test-sbt" % Versions.zioVersion
+  lazy val zio          = "dev.zio" %% "zio"            % Versions.zioVersion
+  lazy val zioTest      = "dev.zio" %% "zio-test"       % Versions.zioVersion
+  lazy val zioTestSbt   = "dev.zio" %% "zio-test-sbt"   % Versions.zioVersion
+//  lazy val zioTestJunit = "dev.zio" %% "zio-test-junit" % Versions.zioVersion
+
 }

@@ -21,8 +21,9 @@ lazy val commonDependencies = Seq(
   Libs.zio,
   Libs.zioTest    % Test,
   Libs.zioTestSbt % Test
-  // Libs.zioJunit   % Test
+//  Libs.zioTestJunit % Test
 )
+testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
 
 lazy val root = (project in file("."))
   .settings(
