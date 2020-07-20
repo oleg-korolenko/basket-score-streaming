@@ -2,16 +2,16 @@ package com.reaktivecarrot
 
 package object domain {
 
-  final case class MatchTimeInSecs(value: Int) extends AnyVal
-  final case class TeamPointsTotal(value: Int) extends AnyVal
+  final case class MatchTimeInSecs(secs: Int)   extends AnyVal
+  final case class TeamPointsTotal(points: Int) extends AnyVal
 
-  sealed trait ScoringTeam { def team: Int }
-  case object Team1 extends ScoringTeam { val team = 0 }
-  case object Team2 extends ScoringTeam { val team = 1 }
+  sealed trait Team { def team: Int }
+  case object Team1 extends Team { val team = 0 }
+  case object Team2 extends Team { val team = 1 }
 
-  object ScoringTeam {
+  object Team {
 
-    def getTeam(team: Int): ScoringTeam =
+    def getTeam(team: Int): Team =
       team match {
         case 0               => Team1
         case 1               => Team2
@@ -19,11 +19,26 @@ package object domain {
       }
 
   }
-  final case class PointsScored(value: Int) extends AnyVal
+  sealed trait PointsScored { def points: Int }
+  case object PointsScored1 extends PointsScored { val points = 1 }
+  case object PointsScored2 extends PointsScored { val points = 2 }
+  case object PointsScored3 extends PointsScored { val points = 3 }
 
-  final case class ScoringEvent(
+  object PointsScored {
+
+    def getPoints(points: Int): PointsScored =
+      points match {
+        case 1               => PointsScored1
+        case 2               => PointsScored2
+        case 3               => PointsScored3
+        case notSupportedVal => throw new RuntimeException(s"$notSupportedVal  is not supported as point that can be scored")
+      }
+
+  }
+
+  final case class ScoreEvent(
     pointsScored: PointsScored,
-    scoringTeam: ScoringTeam,
+    scoringTeam: Team,
     team2Total: TeamPointsTotal,
     team1Total: TeamPointsTotal,
     matchTime: MatchTimeInSecs
