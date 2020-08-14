@@ -19,9 +19,9 @@ lazy val scalaCompilerOptions = Seq(
 
 lazy val commonDependencies = Seq(
   Libs.zio,
+  Libs.zioStreams,
   Libs.zioTest    % Test,
   Libs.zioTestSbt % Test
-//  Libs.zioTestJunit % Test
 )
 testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
 

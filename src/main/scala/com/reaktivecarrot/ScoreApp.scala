@@ -1,32 +1,50 @@
 package com.reaktivecarrot
 
 import com.reaktivecarrot.decoder.ScoreEventDecoder
+import com.reaktivecarrot.decoder.ScoreEventDecoder.ScoreEventDecoder
+import com.reaktivecarrot.domain.ScoreEvent
 import com.reaktivecarrot.exception.ScoreAppException
-import com.reaktivecarrot.storage.ScoreKeeper
-import com.reaktivecarrot.storage.ScoreKeeper.{ScoreBox, ScoreKeeper}
+import com.reaktivecarrot.storage.ScoreKeeper.ScoreKeeper
 import com.reaktivecarrot.validation.ScoreEventValidator
 import com.reaktivecarrot.validation.ScoreEventValidator.ScoreEventValidator
-import com.reaktivecarrot.decoder.ScoreEventDecoder.{ScoreEventDecoder, _}
-import com.reaktivecarrot.domain.ScoreEvent
-import com.reaktivecarrot.exception.ScoreAppException.ScoreEventDecodeException
-import zio.{ExitCode, Has, ZIO}
+import zio.clock.Clock
+import zio.console._
+import zio.stream.ZStream
+import zio._
+
+object Env {
+  type SysDeps = Console with Clock
+
+  val emptyScoreBox: Layer[Nothing, Has[ScoreBox]] = ZLayer.fromEffect(Ref.make(Vector.empty[ScoreEvent]))
+//  val validator: Layer[Nothing, ScoreEventValidator] = emptyScoreBox >>> ScoreEventValidator.live
+  //val scoreKeeper: ZLayer[Has[Ref[ScoreBox]], Nothing, ScoreKeeper] = emptyScoreBox >>> ScoreKeeper.inMemory
+
+  type AppEnvironment = SysDeps with ScoreEventDecoder with ScoreKeeper
+  //++ scoreKeeper
+  val live = Console.live ++ Clock.live ++ ScoreEventDecoder.live
+}
 
 object ScoreApp extends zio.App {
 
-// TODO add dep on Logger
+  def run(scoreEvents: List[String]): ZIO[zio.ZEnv, Nothing, ExitCode] = {
 
-  def run(scoreEvents: List[String]) = ???
+    val inStream: ZStream[Any, Nothing, String] = ZStream("", "0x781002", "0xf0101f")
 
-  def program(encodedEvents: List[String]): ZIO[ScoreEventDecoder with ScoreEventValidator with ScoreKeeper, ScoreAppException, ScoreBox] =
-    for {
-      decoded: ZIO[ScoreEventDecoder, ScoreEventDecodeException, ScoreEvent] <- decodeEvents(encodedEvents)
-      decodedR                                                               <- decoded
+    val maybeDecoded: ZStream[ScoreEventDecoder, Nothing, Either[ScoreAppException.ScoreEventDecodeException, ScoreEvent]] =
+      inStream.via(ScoreEventDecoder.decode)
 
-      validated <- ScoreEventValidator.validate(decoded)
-    } yield ()
+    val decoded: ZStream[ScoreEventDecoder, Nothing, Either[ScoreAppException.ScoreEventDecodeException, ScoreEvent]] = maybeDecoded.filter(_.isRight)
+    val failedToBeDecoded                                                                                             = maybeDecoded.filter(_.isLeft)
 
-  private[this] def decodeEvents(scoreEvents: List[String]): List[ZIO[ScoreEventDecoder, ScoreEventDecodeException, ScoreEvent]] = {
-    scoreEvents.map(ScoreEventDecoder.decode)
+    case class Whatever(msg: String)
+
+    val program =
+      decoded
+        .tap(event => putStr(event.toString))
+        .runCollect
+
+    program.provideLayer(Env.live).exitCode
+
   }
 
 }

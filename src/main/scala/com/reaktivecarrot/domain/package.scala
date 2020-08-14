@@ -44,4 +44,6 @@ package object domain {
     matchTime: MatchTimeInSecs
   )
 
+  case class ScoreBox()
+
 }

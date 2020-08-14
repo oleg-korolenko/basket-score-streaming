@@ -1,43 +1,47 @@
 package com.reaktivecarrot.decoder
 
+import com.reaktivecarrot.DecodedEventsStream
 import com.reaktivecarrot.domain._
 import com.reaktivecarrot.exception.ScoreAppException._
-import zio.{Has, Layer, ZIO, ZLayer}
+import zio.{Has, IO, Layer, ZIO, ZLayer}
+import zio.stream.ZStream
 
 object ScoreEventDecoder {
 
-  type ScoreEventDecoder = Has[ScoreEventDecoder.Service]
+  type ScoreEventDecoder   = Has[Service]
+  type EncodedEventsStream = ZStream[Any, Nothing, String]
 
   trait Service {
-    def decode(hex: String): ZIO[Any, ScoreEventDecodeException, ScoreEvent]
-
+    def decode(events: EncodedEventsStream): DecodedEventsStream
   }
 
   val live: Layer[Nothing, ScoreEventDecoder] = ZLayer.succeed(new Service {
 
-    override def decode(hex: String): ZIO[Any, ScoreEventDecodeException, ScoreEvent] = {
+    override def decode(encodedEvents: EncodedEventsStream): DecodedEventsStream =
+      encodedEvents.map[Either[ScoreEventDecodeException, ScoreEvent]] {
+        encoded =>
+          try {
+            val intHexInput    = Integer.decode(encoded).toInt
+            val binaryStrInput = intHexInput.toBinaryString
+            val padded         = f"$binaryStrInput%32s".replace(' ', '0')
+            // we return a new 1 entry stream with ScoreEvent
+            Right {
+              ScoreEvent(
+                matchTime = MatchTimeInSecs(Integer.parseInt(padded.slice(1, 13), 2)),
+                team1Total = TeamPointsTotal(Integer.parseInt(padded.substring(13, 21), 2)),
+                team2Total = TeamPointsTotal(Integer.parseInt(padded.substring(21, 29), 2)),
+                scoringTeam = Team.getTeam(Integer.parseInt(padded.substring(29, 30), 2)),
+                pointsScored = PointsScored.getPoints(Integer.parseInt(padded.substring(30, 32), 2))
+              )
+            }
 
-      ZIO.fromEither {
-        try {
-          val intHexInput    = Integer.decode(hex).toInt
-          val binaryStrInput = intHexInput.toBinaryString
-          val padded         = f"$binaryStrInput%32s".replace(' ', '0')
-          Right(
-            ScoreEvent(
-              matchTime = MatchTimeInSecs(Integer.parseInt(padded.slice(1, 13), 2)),
-              team1Total = TeamPointsTotal(Integer.parseInt(padded.substring(13, 21), 2)),
-              team2Total = TeamPointsTotal(Integer.parseInt(padded.substring(21, 29), 2)),
-              scoringTeam = Team.getTeam(Integer.parseInt(padded.substring(29, 30), 2)),
-              pointsScored = PointsScored.getPoints(Integer.parseInt(padded.substring(30, 32), 2))
-            )
-          )
-        } catch {
-          case _: Throwable => Left(ScoreEventDecodeException(hex))
-        }
+          } catch {
+            // if we fail we return a new 1 entry failed stream with ScoreEventDecodeException
+            case _: Throwable => Left(ScoreEventDecodeException(encoded))
+          }
       }
-    }
   })
 
-  def decode(hex: String): ZIO[ScoreEventDecoder, ScoreEventDecodeException, ScoreEvent] =
-    ZIO.accessM(_.get.decode(hex))
+  def decode(encodedEvents: EncodedEventsStream) = ZStream.accessStream[ScoreEventDecoder](_.get.decode(encodedEvents))
+
 }
