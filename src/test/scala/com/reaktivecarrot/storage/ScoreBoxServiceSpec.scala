@@ -1,15 +1,11 @@
 package com.reaktivecarrot.storage
 
 import com.reaktivecarrot.domain._
-import zio.{IO, Ref, UIO, ZIO}
+import com.reaktivecarrot.storage.ScoreBoxService.ScoreBoxService
 import zio.stream.ZStream
 import zio.test.Assertion._
 import zio.test._
-import zio.test.TestAspect._
-import zio.console._
-import com.reaktivecarrot.exception.ScoreAppException
-import com.reaktivecarrot.storage.ScoreBoxService.ScoreBoxService
-import zio.Chunk
+import zio.{Ref, UIO}
 
 object ScoreBoxServiceSpec extends DefaultRunnableSpec {
 

@@ -2,7 +2,6 @@ package com.reaktivecarrot.decoder
 
 import com.reaktivecarrot.domain._
 import com.reaktivecarrot.exception.ScoreAppException._
-import zio.{Chunk, ExitCode, Has, Ref, URIO, ZIO}
 import zio.stream.ZStream
 import zio.test.Assertion._
 import zio.test._

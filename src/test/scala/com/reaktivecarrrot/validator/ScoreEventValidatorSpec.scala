@@ -1,7 +1,6 @@
 package com.reaktivecarrrot.validator
 
 import com.reaktivecarrot.domain._
-import com.reaktivecarrot.exception.ScoreAppException
 import com.reaktivecarrot.exception.ScoreAppException._
 import com.reaktivecarrot.validation.ScoreEventValidator
 import com.reaktivecarrot.validation.ScoreEventValidator.ScoreEventValidator
