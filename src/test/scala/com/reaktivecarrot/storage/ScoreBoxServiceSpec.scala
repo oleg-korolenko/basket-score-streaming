@@ -25,27 +25,8 @@ object ScoreBoxServiceSpec extends DefaultRunnableSpec {
               .provideLayer(scoreBox.toLayer >>> ScoreBoxService.inMemory)
               .runHead
 
-          val correctEventIsReturned = assertM(result)(isSome(equalTo(Right(event))))
-//          val expectedScoreBoxState        = Ref.make(ScoreBox(events = Vector(event), lastEvent = Some(event)))
-//          val scoreBoxStateIsCorrect = for {
-//            scoreBoxRef: Ref[ScoreBox] <- scoreBox
-//            currentScoreBox: ScoreBox  <- scoreBoxRef.get
-//            _                          <- putStr(s"in the loop $currentScoreBox")
-//            expScoreRef: Ref[ScoreBox] <- expectedScoreBoxState
-//            assertion                  <- assertM(expScoreRef.get)(equalTo(currentScoreBox))
-//          } yield assertion
-//
-//          for {
-//            scoreBoxRef: Ref[ScoreBox] <- scoreBox
-//            currentScoreBox: ScoreBox  <- scoreBoxRef.get
-//            _                          <- putStr(s"in the loop $currentScoreBox")
-//            isUpdated <- assertM(scoreBoxRef.get)(
-//              equalTo(ScoreBox(events = Vector(event), lastEvent = Some(event)))
-//            ) //ScoreBox(events = Vector(event), lastEvent = Some(event))
-//          } yield isUpdated
-///
+          assertM(result)(isSome(equalTo(Right(event))))
 
-          correctEventIsReturned
         },
         testM("should add one score event") {
           val event                        = ScoreEvent(PointsScored1, Team1, TeamPointsTotal(0), TeamPointsTotal(1), MatchTimeInSecs(60))
