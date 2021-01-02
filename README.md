@@ -1,4 +1,4 @@
-Basic streaming pipeline with basketball match data.
+Basic streaming pipeline with basketball match data ( will be used for an article ) .
 
 Data consists of series of `ScoreEvent` which reflects changes in match score,  and  it's streamed during the match.
 
