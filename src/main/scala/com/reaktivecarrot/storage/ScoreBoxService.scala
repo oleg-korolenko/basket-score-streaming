@@ -23,13 +23,17 @@ object ScoreBoxService {
       new Service {
         override def add[R](events: ScoreEventsStream[R]): ScoreEventsStream[R] = {
           events
-            .map {
+            .mapM {
               case Right(event) =>
-                println(s"event to add $event")
-                // scoreBox.updateAndGet(box => box.copy(events = box.events :+ event, lastEvent = Some(event)))
-                scoreBox.update(box => ScoreBox(events = Vector(event), lastEvent = Some(event)))
-                Right(event)
-              case Left(exception) => Left(exception)
+                print(s" herzzz")
+                scoreBox.updateAndGet(box => {
+                  print(s" heryyyyyy")
+                  val updatedBox = box.copy(events = box.events :+ event, lastEvent = Some(event))
+                  print(s" updatedBox = $updatedBox")
+                  updatedBox
+                }) *> ZIO.right(event)
+
+              case Left(exception) => ZIO.left(exception)
             }
         }
 
