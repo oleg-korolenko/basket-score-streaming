@@ -14,21 +14,22 @@ object ScoreEventDecoderSpec extends DefaultRunnableSpec {
       testM("should return ScoringEventDecodeException for empty string as input") {
         val input = ""
 
-        val result = ScoreEventDecoder.decode(ZStream(input)).provideLayer(ScoreEventDecoder.live).runHead
+        val result =
+          ScoreEventDecoder.decode(ZStream(input)).provideLayer(ScoreEventDecoder.live).runHead
 
-        assertM(result.flip)(isSome(isLeft(equalTo(ScoreEventDecodeException(input)))))
+        assertM(result)(isSome(isLeft(equalTo(ScoreEventDecodeException(input)))))
       },
       testM("should return ScoringEventDecodeException for nox hex string as input") {
         val input = "---"
 
         val result = ScoreEventDecoder.decode(ZStream(input)).provideLayer(ScoreEventDecoder.live).runHead
 
-        assertM(result.flip)(isSome(isLeft(equalTo(ScoreEventDecodeException(input)))))
+        assertM(result)(isSome(isLeft(equalTo(ScoreEventDecodeException(input)))))
       },
       testM("should decode a scoring event : At 00:15, Team 1 scores 2, score 2:0") {
         val input = "0x781002"
 
-        val result: ZIO[Any, Nothing, Option[Either[ScoreEventDecodeException, ScoreEvent]]] =
+        val result =
           ScoreEventDecoder.decode(ZStream(input)).provideLayer(ScoreEventDecoder.live).runHead
 
         val expected = ScoreEvent(

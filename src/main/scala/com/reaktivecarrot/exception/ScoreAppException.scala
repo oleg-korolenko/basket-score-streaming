@@ -19,8 +19,8 @@ object ScoreAppException {
     def message: String = s"$event can't be added due to $cause"
   }
 
-  final case class ScoreBoxRetrievalException(elems: Int) extends ScoreAppException {
-    def message: String = s"Can't retrieve $elems from scores"
+  final case class AccValidationException(exceptions: Seq[ScoreEventValidationException]) extends ScoreAppException {
+    override def message: String = s"Validation exceptions :  ${exceptions.map(_.message).mkString("\n")} "
   }
 
   final case class ScoreEventMatchTimeValidationException(matchTime: MatchTimeInSecs, prevMatchTime: MatchTimeInSecs) extends ScoreEventValidationException {

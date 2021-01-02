@@ -1,5 +1,9 @@
 package com.reaktivecarrot
 
+import com.reaktivecarrot.exception.ScoreAppException.ScoreEventDecodeException
+import com.reaktivecarrot.exception.{ScoreAppException, ScoreEventValidationException}
+import zio.stream.ZStream
+
 package object domain {
 
   final case class MatchTimeInSecs(secs: Int)   extends AnyVal
@@ -44,6 +48,20 @@ package object domain {
     matchTime: MatchTimeInSecs
   )
 
-  case class ScoreBox()
+  type ScoreEventValidationExceptions = Seq[ScoreEventValidationException]
 
+  final case class ScoreBox(events: Vector[ScoreEvent] = Vector.empty[ScoreEvent], lastEvent: Option[ScoreEvent] = None)
+
+  object ScoreBox {
+
+    def apply(events: Vector[ScoreEvent]): ScoreBox =
+      events match {
+        case _ +: _ => ScoreBox(events, Some(events.last))
+        case _      => ScoreBox(Vector.empty, None)
+      }
+  }
+
+  type ScoreEventsStream[R] = ZStream[R, Nothing, ScoreEventOr[ScoreAppException]]
+  type EncodedEventsStream  = ZStream[Any, Nothing, String]
+  type ScoreEventOr[T]      = Either[T, ScoreEvent]
 }

@@ -1,23 +1,22 @@
 package com.reaktivecarrot.decoder
 
-import com.reaktivecarrot.DecodedEventsStream
 import com.reaktivecarrot.domain._
+import com.reaktivecarrot.exception.ScoreAppException
 import com.reaktivecarrot.exception.ScoreAppException._
 import zio.{Has, IO, Layer, ZIO, ZLayer}
 import zio.stream.ZStream
 
 object ScoreEventDecoder {
 
-  type ScoreEventDecoder   = Has[Service]
-  type EncodedEventsStream = ZStream[Any, Nothing, String]
+  type ScoreEventDecoder = Has[Service]
 
   trait Service {
-    def decode(events: EncodedEventsStream): DecodedEventsStream
+    def decode(events: EncodedEventsStream): ZStream[Any, Nothing, ScoreEventOr[ScoreAppException]]
   }
 
   val live: Layer[Nothing, ScoreEventDecoder] = ZLayer.succeed(new Service {
 
-    override def decode(encodedEvents: EncodedEventsStream): DecodedEventsStream =
+    override def decode(encodedEvents: EncodedEventsStream): ZStream[Any, Nothing, ScoreEventOr[ScoreAppException]] =
       encodedEvents.map[Either[ScoreEventDecodeException, ScoreEvent]] {
         encoded =>
           try {
@@ -42,6 +41,7 @@ object ScoreEventDecoder {
       }
   })
 
-  def decode(encodedEvents: EncodedEventsStream) = ZStream.accessStream[ScoreEventDecoder](_.get.decode(encodedEvents))
+  def decode(encodedEvents: EncodedEventsStream): ZStream[ScoreEventDecoder, Nothing, ScoreEventOr[ScoreAppException]] =
+    ZStream.accessStream[ScoreEventDecoder](_.get.decode(encodedEvents))
 
 }
