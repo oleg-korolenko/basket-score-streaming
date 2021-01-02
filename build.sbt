@@ -3,8 +3,6 @@ ThisBuild / scalaVersion := "2.13.2"
 ThisBuild / version := "0.1.0-SNAPSHOT"
 ThisBuild / organization := "com.reaktive-carrot"
 ThisBuild / organizationName := "reaktive-carrot"
-// ThisBuild / semanticdbEnabled := true
-// ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 
 lazy val scalaCompilerOptions = Seq(
   "-encoding",

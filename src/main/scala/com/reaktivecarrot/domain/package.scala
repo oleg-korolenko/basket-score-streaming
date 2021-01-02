@@ -1,7 +1,6 @@
 package com.reaktivecarrot
 
-import com.reaktivecarrot.exception.ScoreAppException.ScoreEventDecodeException
-import com.reaktivecarrot.exception.{ScoreAppException, ScoreEventValidationException}
+import com.reaktivecarrot.exception.ScoreAppException
 import zio.stream.ZStream
 
 package object domain {

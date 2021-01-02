@@ -2,17 +2,16 @@ package com.reaktivecarrot
 
 import com.reaktivecarrot.decoder.ScoreEventDecoder
 import com.reaktivecarrot.decoder.ScoreEventDecoder.ScoreEventDecoder
-import com.reaktivecarrot.domain.{ScoreBox, ScoreEvent}
+import com.reaktivecarrot.domain.ScoreBox
 import com.reaktivecarrot.exception.ScoreAppException
-import com.reaktivecarrot.exception.ScoreAppException._
+import com.reaktivecarrot.storage.ScoreBoxService
+import com.reaktivecarrot.storage.ScoreBoxService.ScoreBoxService
 import com.reaktivecarrot.validation.ScoreEventValidator
 import com.reaktivecarrot.validation.ScoreEventValidator.ScoreEventValidator
+import zio._
 import zio.clock.Clock
 import zio.console._
 import zio.stream.ZStream
-import zio._
-import com.reaktivecarrot.storage.ScoreBoxService
-import com.reaktivecarrot.storage.ScoreBoxService.ScoreBoxService
 
 object Env {
   type SysDeps = Console with Clock

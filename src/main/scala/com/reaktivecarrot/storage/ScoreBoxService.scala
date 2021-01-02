@@ -2,12 +2,8 @@ package com.reaktivecarrot.storage
 
 import com.reaktivecarrot.domain._
 import com.reaktivecarrot.exception._
-import com.reaktivecarrot.exception.ScoreAppException._
-import com.reaktivecarrot.validation.ScoreEventValidator
-import com.reaktivecarrot.validation.ScoreEventValidator._
 import zio._
 import zio.stream.ZStream
-import zio.console.putStr
 
 object ScoreBoxService {
   type ScoreBoxService = Has[Service]
