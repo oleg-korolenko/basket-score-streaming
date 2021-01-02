@@ -1,8 +1,8 @@
 Basic streaming pipeline with basketball match data.
 
-Data consists of series of `ScoreEvent` which reflects changes in match score and  it's streamed during the match.
+Data consists of series of `ScoreEvent` which reflects changes in match score,  and  it's streamed during the match.
 
-Data is initially encoded in byte strings and could contain invalid data.
+Data is initially encoded as hex strings and could contain invalid data.
 
 Events could arrive out of order, we just mark them as invalid in that case.
 
