@@ -48,8 +48,6 @@ package object domain {
     matchTime: MatchTimeInSecs
   )
 
-  type ScoreEventValidationExceptions = Seq[ScoreEventValidationException]
-
   final case class ScoreBox(events: Vector[ScoreEvent] = Vector.empty[ScoreEvent], lastEvent: Option[ScoreEvent] = None)
 
   object ScoreBox {

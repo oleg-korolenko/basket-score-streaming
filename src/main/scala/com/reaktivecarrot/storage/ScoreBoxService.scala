@@ -25,14 +25,7 @@ object ScoreBoxService {
           events
             .mapM {
               case Right(event) =>
-                print(s" herzzz")
-                scoreBox.updateAndGet(box => {
-                  print(s" heryyyyyy")
-                  val updatedBox = box.copy(events = box.events :+ event, lastEvent = Some(event))
-                  print(s" updatedBox = $updatedBox")
-                  updatedBox
-                }) *> ZIO.right(event)
-
+                scoreBox.updateAndGet(box => box.copy(events = box.events :+ event, lastEvent = Some(event))) *> ZIO.right(event)
               case Left(exception) => ZIO.left(exception)
             }
         }

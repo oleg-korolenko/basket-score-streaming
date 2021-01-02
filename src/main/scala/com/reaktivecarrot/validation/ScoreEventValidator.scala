@@ -30,8 +30,8 @@ object ScoreEventValidator {
                 case Some(prev) =>
                   // could have used cats.Validated or similar
                   checkMatchTimeIsNotSmaller(event, prev) ++ checkTotalsIsNotSmaller(event, prev) ++ validatePointsIncreaseAndTotals(event, prev) match {
-                    case Seq()                                      => Right(event)
-                    case exceptions: ScoreEventValidationExceptions => Left(AccValidationException(exceptions))
+                    case Seq()                                          => Right(event)
+                    case exceptions: Seq[ScoreEventValidationException] => Left(AccValidationException(exceptions))
                   }
 
               }
