@@ -1,4 +1,4 @@
-package com.reaktivecarrrot.validator
+package com.reaktivecarrot.validator
 
 import com.reaktivecarrot.domain._
 import com.reaktivecarrot.exception.ScoreAppException._
