@@ -1,6 +1,7 @@
 package com.reaktivecarrot
 
 import com.reaktivecarrot.exception.ScoreAppException
+import zio.blocking.Blocking
 import zio.stream.ZStream
 
 package object domain {
@@ -58,7 +59,7 @@ package object domain {
       }
   }
 
-  type ScoreEventsStream[R] = ZStream[R, Nothing, ScoreEventOr[ScoreAppException]]
-  type EncodedEventsStream  = ZStream[Any, Nothing, String]
-  type ScoreEventOr[T]      = Either[T, ScoreEvent]
+  type ScoreEventsStream[R]   = ZStream[R, Throwable, ScoreEventOr[ScoreAppException]]
+  type EncodedEventsStream[R] = ZStream[R, Throwable, String]
+  type ScoreEventOr[T]        = Either[T, ScoreEvent]
 }

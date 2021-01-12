@@ -39,7 +39,7 @@ object ScoreBoxService {
       }
     }
 
-  def add[R](events: ScoreEventsStream[R]): ZStream[R with ScoreBoxService, Nothing, ScoreEventOr[ScoreAppException]] =
+  def add[R](events: ScoreEventsStream[R]): ZStream[R with ScoreBoxService, Throwable, ScoreEventOr[ScoreAppException]] =
     ZStream.accessStream[R with ScoreBoxService](_.get.add(events))
 
   def take(numElems: Int): ZStream[ScoreBoxService, Nothing, ScoreEvent] =

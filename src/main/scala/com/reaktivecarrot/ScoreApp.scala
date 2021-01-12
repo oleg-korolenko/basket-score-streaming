@@ -3,68 +3,74 @@ package com.reaktivecarrot
 import com.reaktivecarrot.decoder.ScoreEventDecoder
 import com.reaktivecarrot.decoder.ScoreEventDecoder.ScoreEventDecoder
 import com.reaktivecarrot.domain.ScoreBox
-import com.reaktivecarrot.exception.ScoreAppException
 import com.reaktivecarrot.storage.ScoreBoxService
-import com.reaktivecarrot.storage.ScoreBoxService.ScoreBoxService
 import com.reaktivecarrot.validation.ScoreEventValidator
 import com.reaktivecarrot.validation.ScoreEventValidator.ScoreEventValidator
 import zio._
+import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console._
-import zio.stream.ZStream
+import zio.stream.{ZStream, ZTransducer}
+
+import java.nio.file.Paths
 
 object Env {
   type SysDeps = Console with Clock
 
-  val emptyScoreBox: ZLayer[Any, Nothing, Has[Ref[ScoreBox]]] = Ref.make(ScoreBox()).toLayer
-  val validator: ZLayer[Any, Nothing, ScoreEventValidator]    = emptyScoreBox >>> ScoreEventValidator.live
-  val scoreBoxService: ZLayer[Any, Nothing, ScoreBoxService]  = emptyScoreBox >>> ScoreBoxService.inMemory
+  val emptyScoreBox   = Ref.make(ScoreBox()).toLayer
+  val validator       = emptyScoreBox >>> ScoreEventValidator.live
+  val scoreBoxService = emptyScoreBox >>> ScoreBoxService.inMemory
 
   type AppEnvironment = SysDeps with ScoreEventDecoder
 
-  val live = Console.live ++ Clock.live ++ ScoreEventDecoder.live ++ validator ++ scoreBoxService
+  val live = Blocking.live ++ Console.live ++ Clock.live ++ ScoreEventDecoder.live ++ validator ++ scoreBoxService
 }
 
 object ScoreApp extends zio.App {
 
-  def run(scoreEvents: List[String]): ZIO[zio.ZEnv, Nothing, ExitCode] = {
+  def logError(data: String) = {
+    putStrLnErr(s" Error: $data") *> Task.succeed()
+  }
 
-    def logError(data: String) = {
-      putStrLnErr(s" Error: $data") *> Task.succeed()
+  def log(data: String) = {
+    putStrLn(s" Event: $data") *> Task.succeed()
+  }
+
+  def run(args: List[String]) = {
+
+    args match {
+      case scoreFilePath :: Nil =>
+        val fileInputStream: ZStream[Blocking, Throwable, String] = ZStream
+          .fromFile(Paths.get(ClassLoader.getSystemResource(scoreFilePath).toURI))
+          .aggregate(ZTransducer.utf8Decode >>> ZTransducer.splitLines)
+//          .cat
+        val program =
+          fileInputStream
+            .via(ScoreEventDecoder.decode[Blocking])
+            .via(ScoreEventValidator.validate[Blocking with ScoreEventDecoder])
+            .via(ScoreBoxService.add[Blocking with ScoreEventDecoder with ScoreEventValidator])
+            .partition(_.isLeft)
+            .use {
+              case (errors, events) =>
+                val errorsIO = errors
+                  .filter(_.isLeft)
+                  .collectWhile { case Left(a) => a }
+                  .tap(e => logError(e.message))
+                  .runCollect
+
+                val successIO = events
+                  .filter(_.isRight)
+                  .collectWhile { case Right(a) => a }
+                  .tap(e => log(e.toString))
+                  .runCollect
+
+                successIO &> errorsIO
+            }
+        program
+          .provideLayer(Env.live)
+          .exitCode
+      case _ => console.putStrLn(" [score events path] should be provided as argument").as(ExitCode.failure)
     }
-
-    def log(data: String) = {
-      putStrLn(s" Event: $data") *> Task.succeed()
-    }
-
-    val inStream: ZStream[Any, Nothing, String] = ZStream("", "0x781002", "0xf0101f", "0x781002")
-
-    val program =
-      inStream
-        .via(ScoreEventDecoder.decode)
-        .via(ScoreEventValidator.validate[ScoreEventDecoder])
-        .via(ScoreBoxService.add[ScoreEventDecoder with ScoreEventValidator])
-        .partition(_.isLeft)
-        .use {
-          case (errors, events) =>
-            val errorsIO: ZIO[Console, Nothing, Chunk[ScoreAppException]] = errors
-              .filter(_.isLeft)
-              .collectWhile { case Left(a) => a }
-              .tap(e => logError(e.message))
-              .runCollect
-
-            val successIO = events
-              .filter(_.isRight)
-              .collectWhile { case Right(a) => a }
-              .tap(e => log(e.toString))
-              .runCollect
-
-            successIO &> errorsIO
-        }
-
-    program
-      .provideLayer(Env.live)
-      .exitCode
 
   }
 

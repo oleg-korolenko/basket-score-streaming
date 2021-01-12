@@ -16,12 +16,12 @@ object ScoreEventValidator {
   type ScoreEventValidator = Has[Service]
 
   trait Service {
-    def validate[R](events: ZStream[R, Nothing, ScoreEventOr[ScoreAppException]]): ZStream[R, Nothing, ScoreEventOr[ScoreAppException]]
+    def validate[R](events: ZStream[R, Throwable, ScoreEventOr[ScoreAppException]]): ZStream[R, Throwable, ScoreEventOr[ScoreAppException]]
   }
 
-  val live: ZLayer[Has[Ref[ScoreBox]], Nothing, ScoreEventValidator] = ZLayer.fromService[Ref[ScoreBox], Service] { (scoreBox: Ref[ScoreBox]) =>
+  val live: ZLayer[Has[Ref[ScoreBox]], Throwable, ScoreEventValidator] = ZLayer.fromService[Ref[ScoreBox], Service] { (scoreBox: Ref[ScoreBox]) =>
     new Service {
-      override def validate[R](events: ZStream[R, Nothing, ScoreEventOr[ScoreAppException]]): ZStream[R, Nothing, ScoreEventOr[ScoreAppException]] =
+      override def validate[R](events: ZStream[R, Throwable, ScoreEventOr[ScoreAppException]]): ZStream[R, Throwable, ScoreEventOr[ScoreAppException]] =
         events.mapM {
           case Right(event) =>
             scoreBox.get.map { score =>
@@ -75,8 +75,8 @@ object ScoreEventValidator {
   }
 
   def validate[R](
-    events: ZStream[R, Nothing, ScoreEventOr[ScoreAppException]]
-  ): ZStream[R with ScoreEventValidator, Nothing, ScoreEventOr[ScoreAppException]] =
+    events: ZStream[R, Throwable, ScoreEventOr[ScoreAppException]]
+  ): ZStream[R with ScoreEventValidator, Throwable, ScoreEventOr[ScoreAppException]] =
     ZStream.accessStream[R with ScoreEventValidator](_.get.validate[R](events))
 
 }
