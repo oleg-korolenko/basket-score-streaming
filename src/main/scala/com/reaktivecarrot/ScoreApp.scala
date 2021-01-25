@@ -9,13 +9,18 @@ import com.reaktivecarrot.validation.ScoreEventValidator.ScoreEventValidator
 import zio._
 import zio.blocking.Blocking
 import zio.clock.Clock
-import zio.console._
 import zio.stream.{ZStream, ZTransducer}
 
 import java.nio.file.Paths
+import zio.logging._
 
 object Env {
-  type SysDeps = Console with Clock
+  type SysDeps = Logging with Clock
+
+  val logger = Logging.console(
+    logLevel = LogLevel.Info,
+    format = LogFormat.ColoredLogFormat()
+  ) >>> Logging.withRootLoggerName("basket-score")
 
   val emptyScoreBox   = Ref.make(ScoreBox()).toLayer
   val validator       = emptyScoreBox >>> ScoreEventValidator.live
@@ -23,17 +28,17 @@ object Env {
 
   type AppEnvironment = SysDeps with ScoreEventDecoder
 
-  val live = Blocking.live ++ Console.live ++ Clock.live ++ ScoreEventDecoder.live ++ validator ++ scoreBoxService
+  val live = logger ++ Blocking.live ++ Clock.live ++ ScoreEventDecoder.live ++ validator ++ scoreBoxService
 }
 
 object ScoreApp extends zio.App {
 
   def logError(data: String) = {
-    putStrLnErr(s" Error: $data") *> Task.succeed()
+    log.error(s" Error: $data") *> Task.succeed()
   }
 
-  def log(data: String) = {
-    putStrLn(s" Event: $data") *> Task.succeed()
+  def logInfo(data: String) = {
+    log.info(s" Event: $data") *> Task.succeed()
   }
 
   def run(args: List[String]) = {
@@ -43,7 +48,7 @@ object ScoreApp extends zio.App {
         val fileInputStream: ZStream[Blocking, Throwable, String] = ZStream
           .fromFile(Paths.get(ClassLoader.getSystemResource(scoreFilePath).toURI))
           .aggregate(ZTransducer.utf8Decode >>> ZTransducer.splitLines)
-//          .cat
+
         val program =
           fileInputStream
             .via(ScoreEventDecoder.decode[Blocking])
@@ -61,7 +66,7 @@ object ScoreApp extends zio.App {
                 val successIO = events
                   .filter(_.isRight)
                   .collectWhile { case Right(a) => a }
-                  .tap(e => log(e.toString))
+                  .tap(e => logInfo(e.toString))
                   .runCollect
 
                 successIO &> errorsIO

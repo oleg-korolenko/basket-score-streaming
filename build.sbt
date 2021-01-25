@@ -18,6 +18,7 @@ lazy val scalaCompilerOptions = Seq(
 lazy val commonDependencies = Seq(
   Libs.zio,
   Libs.zioStreams,
+  Libs.zioLogging,
   Libs.zioTest    % Test,
   Libs.zioTestSbt % Test
 )
