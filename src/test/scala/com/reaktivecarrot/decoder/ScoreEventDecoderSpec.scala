@@ -102,24 +102,5 @@ object ScoreEventDecoderSpec extends DefaultRunnableSpec {
 
         assertM(result)(isSome(isRight(equalTo(expected))))
       }
-//      testM("just checking ") {
-//        import zio.console._
-//
-//        val a: ZStream[zio.console.Console, Nothing, Int]              = ZStream(1, 2, 3)
-//        def multiply(ints: ZStream[zio.console.Console, Nothing, Int]) = ints.map(_ * 2)
-//
-//        type State = Has[Vector[Int]]
-//        val keeper = { (state: State, event: Int) => state += 1 }
-//
-//        val program: ZIO[Console, Nothing, Chunk[Int]] = a
-//          .via(multiply)
-//          .via(keeper)
-//          .tap(event => putStr(event.toString))
-//          .via()
-//          .runCollect
-//
-//        val result: URIO[Any with Console, ExitCode] = program.provideLayer(zio.console.Console.live).exitCode
-//        assertM(result)(equalTo(ExitCode.success))
-//      }
     )
 }

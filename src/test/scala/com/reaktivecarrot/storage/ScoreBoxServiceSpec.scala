@@ -1,5 +1,6 @@
 package com.reaktivecarrot.storage
 
+import com.reaktivecarrot.Generators._
 import com.reaktivecarrot.domain._
 import com.reaktivecarrot.storage.ScoreBoxService.ScoreBoxService
 import zio.stream.ZStream
@@ -12,83 +13,65 @@ object ScoreBoxServiceSpec extends DefaultRunnableSpec {
   def spec =
     suite("ScoreBoxService")(
       suite("adding scoring events")(
-        testM("should add ScoreEvent events") {
-          val event                        = ScoreEvent(PointsScored1, Team1, TeamPointsTotal(0), TeamPointsTotal(1), MatchTimeInSecs(60))
-          val scoreBox: UIO[Ref[ScoreBox]] = Ref.make(ScoreBox())
-          val result =
-            ScoreBoxService
-              .add[ScoreBoxService](ZStream(Right(event)))
-              .provideLayer(scoreBox.toLayer >>> ScoreBoxService.inMemory)
-              .runHead
-
-          assertM(result)(isSome(equalTo(Right(event))))
-
-        },
         testM("should add one score event") {
-          val event                        = ScoreEvent(PointsScored1, Team1, TeamPointsTotal(0), TeamPointsTotal(1), MatchTimeInSecs(60))
-          val scoreBox: UIO[Ref[ScoreBox]] = Ref.make(ScoreBox())
+          checkM(Gen.oneOf(scoreEventGen)) { event =>
+            val scoreBox: UIO[Ref[ScoreBox]] = Ref.make(ScoreBox())
+            val result =
+              ScoreBoxService
+                .add[ScoreBoxService](ZStream(Right(event)))
+                .provideLayer(scoreBox.toLayer >>> ScoreBoxService.inMemory)
+                .runHead
 
-          val result = ScoreBoxService
-            .add[ScoreBoxService](ZStream(Right(event)))
-            .provideLayer(scoreBox.toLayer >>> ScoreBoxService.inMemory)
-            .runHead
-
-          assertM(result)(isSome(equalTo(Right(event))))
+            assertM(result)(isSome(equalTo(Right(event))))
+          }
         },
         testM("should add multiple score events") {
-          val events = Vector(
-            ScoreEvent(PointsScored1, Team1, TeamPointsTotal(0), TeamPointsTotal(1), MatchTimeInSecs(60)),
-            ScoreEvent(PointsScored2, Team2, TeamPointsTotal(2), TeamPointsTotal(1), MatchTimeInSecs(120))
-          )
-          val scoreBoxIO: UIO[Ref[ScoreBox]] = Ref.make(ScoreBox())
+          checkM(Gen.vectorOf(scoreEventGen).map(_.map(Right(_)))) { events =>
+            val scoreBoxIO: UIO[Ref[ScoreBox]] = Ref.make(ScoreBox())
 
-          val result = ScoreBoxService
-            .add[ScoreBoxService](ZStream(Right(events.head), Right(events.tail.head)))
-            .provideLayer(scoreBoxIO.toLayer >>> ScoreBoxService.inMemory)
-            .runCollect
-          val expected = zio.Chunk(Right(events.head), Right(events.tail.head))
-          assertM(result)(equalTo(expected))
+            val result = ScoreBoxService
+              .add[ScoreBoxService](ZStream.fromIterable(events))
+              .provideLayer(scoreBoxIO.toLayer >>> ScoreBoxService.inMemory)
+              .runCollect
+            val expected = zio.Chunk(events: _*)
+            assertM(result)(equalTo(expected))
+          }
         }
       ),
       suite("retrieving scoring events")(
         testM("should return 2 out of 2 existing events when requesting 2") {
-          val existingEvents = Vector(
-            ScoreEvent(PointsScored1, Team1, TeamPointsTotal(0), TeamPointsTotal(1), MatchTimeInSecs(60)),
-            ScoreEvent(PointsScored2, Team2, TeamPointsTotal(2), TeamPointsTotal(1), MatchTimeInSecs(120))
-          )
-          val scoreBox                       = ScoreBox(existingEvents)
-          val scoreBoxIO: UIO[Ref[ScoreBox]] = Ref.make(scoreBox)
+          checkM(Gen.vectorOfN(2)(scoreEventGen)) { events =>
+            val scoreBox                        = ScoreBox(events)
+            val scoreBoxIO: UIO[Ref[ScoreBox]]  = Ref.make(scoreBox)
+            val expected: zio.Chunk[ScoreEvent] = zio.Chunk(events: _*)
 
-          val expected: zio.Chunk[ScoreEvent] = zio.Chunk(existingEvents.head, existingEvents.tail.head)
+            val result = ScoreBoxService.take(2).provideLayer(scoreBoxIO.toLayer >>> ScoreBoxService.inMemory).runCollect
 
-          val result = ScoreBoxService.take(2).provideLayer(scoreBoxIO.toLayer >>> ScoreBoxService.inMemory).runCollect
-
-          assertM(result)(equalTo(expected))
+            assertM(result)(equalTo(expected))
+          }
         },
         testM("should return last  1 out of 2 existing events when requesting 1") {
-          val existingEvents = Vector(
-            ScoreEvent(PointsScored1, Team1, TeamPointsTotal(0), TeamPointsTotal(1), MatchTimeInSecs(60)),
-            ScoreEvent(PointsScored2, Team2, TeamPointsTotal(2), TeamPointsTotal(1), MatchTimeInSecs(120))
-          )
-          val scoreBox                       = ScoreBox(existingEvents)
-          val scoreBoxIO: UIO[Ref[ScoreBox]] = Ref.make(scoreBox)
+          checkM(Gen.vectorOfN(2)(scoreEventGen)) { events =>
+            val scoreBox                        = ScoreBox(events)
+            val scoreBoxIO: UIO[Ref[ScoreBox]]  = Ref.make(scoreBox)
+            val expected: zio.Chunk[ScoreEvent] = zio.Chunk(events.tail.head)
 
-          val expected: zio.Chunk[ScoreEvent] = zio.Chunk(existingEvents.tail.head)
+            val result = ScoreBoxService.take(1).provideLayer(scoreBoxIO.toLayer >>> ScoreBoxService.inMemory).runCollect
 
-          val result = ScoreBoxService.take(1).provideLayer(scoreBoxIO.toLayer >>> ScoreBoxService.inMemory).runCollect
-
-          assertM(result)(equalTo(expected))
+            assertM(result)(equalTo(expected))
+          }
         },
         testM("should return 1 out of 1 existing events when requesting 2") {
-          val event      = ScoreEvent(PointsScored1, Team1, TeamPointsTotal(0), TeamPointsTotal(1), MatchTimeInSecs(60))
-          val scoreBox   = ScoreBox(Vector(event))
-          val scoreBoxIO = Ref.make(scoreBox)
+          checkM(Gen.oneOf(scoreEventGen)) { event =>
+            val scoreBox   = ScoreBox(Vector(event))
+            val scoreBoxIO = Ref.make(scoreBox)
 
-          val expected = zio.Chunk(event)
+            val expected = zio.Chunk(event)
 
-          val result = ScoreBoxService.take(2).provideLayer(scoreBoxIO.toLayer >>> ScoreBoxService.inMemory).runCollect
+            val result = ScoreBoxService.take(2).provideLayer(scoreBoxIO.toLayer >>> ScoreBoxService.inMemory).runCollect
 
-          assertM(result)(equalTo(expected))
+            assertM(result)(equalTo(expected))
+          }
         },
         testM("should return empty chunk out of 0 existing events when requesting 1") {
           val scoreBox   = ScoreBox(Vector.empty[ScoreEvent])
@@ -113,15 +96,16 @@ object ScoreBoxServiceSpec extends DefaultRunnableSpec {
           assertM(result)(equalTo(expected))
         },
         testM("should return last event out of 2 existing events") {
-          val event      = ScoreEvent(PointsScored1, Team1, TeamPointsTotal(0), TeamPointsTotal(1), MatchTimeInSecs(60))
-          val scoreBox   = ScoreBox(Vector(event))
-          val scoreBoxIO = Ref.make(scoreBox)
+          checkM(Gen.oneOf(scoreEventGen)) { event =>
+            val scoreBox   = ScoreBox(Vector(event))
+            val scoreBoxIO = Ref.make(scoreBox)
 
-          val expected = zio.Chunk(Some(event))
+            val expected = zio.Chunk(Some(event))
 
-          val result = ScoreBoxService.last().provideLayer(scoreBoxIO.toLayer >>> ScoreBoxService.inMemory).runCollect
+            val result = ScoreBoxService.last().provideLayer(scoreBoxIO.toLayer >>> ScoreBoxService.inMemory).runCollect
 
-          assertM(result)(equalTo(expected))
+            assertM(result)(equalTo(expected))
+          }
         }
       )
     )
