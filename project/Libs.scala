@@ -1,7 +1,7 @@
 import sbt._
 
 object Versions {
-  val zioVersion = "1.0.0"
+  val zioVersion = "1.0.4"
 }
 
 object Libs {
